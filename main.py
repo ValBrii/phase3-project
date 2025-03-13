@@ -1,72 +1,89 @@
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-from models import Note, Description, Base
+import click
+from models import Note, Description, Base  # Import Base from your model.py
 
 # Database setup
+
 engine = create_engine("sqlite:///notes.db")
 SessionLocal = sessionmaker(bind=engine)
 
-# Create tables if they don't exist
-Base.metadata.create_all(engine)
+# Create the tables in the database
+Base.metadata.create_all(engine)  # This will create the tables in the database if they don't exist
 
-# Add a new note
-def add_note():
+@click.group()
+def cli():
+    """
+    CLI for the Notes App
+    """
+    pass
+
+# Command to add a new note
+@cli.command()
+@click.option('--title', prompt='Note Title')
+@click.option('--content', prompt='Note Content')
+@click.option('--description-id', prompt='Description ID', type=int)
+def add_note(title, content, description_id):
     session = SessionLocal()
-    description_id = 1  # You can modify this as needed
     description = session.query(Description).filter(Description.id == description_id).first()
 
     if not description:
-        print("Description not found. Please create one first.")
+        click.echo("Description not found. Please create one first.")
         session.close()
         return
-
-    # Create a new note
-    title = "Sample Note Title"
-    content = "This is the content of the sample note."
 
     note = Note(title=title, content=content, description=description)
     session.add(note)
     session.commit()
-    print(f"Added note: {note.title}")
+    click.echo(f"Added note: {note.title}")
     session.close()
 
-# View all existing notes
-def view_notes():
+# Command to add a new description
+@cli.command()
+@click.option('--name', prompt='Description Name')
+def add_description(name):
+    session = SessionLocal()
+    description = Description(name=name)
+    session.add(description)
+    session.commit()
+    click.echo(f"Added description: {description.name}")
+    session.close()
+
+# Command to list all notes
+@cli.command()
+def list_notes():
     session = SessionLocal()
     notes = session.query(Note).all()
-    if notes:
-        for note in notes:
-            description_name = note.description.name if note.description else "No Description"
-            print(f"ID: {note.id}, Title: {note.title}, Content: {note.content} | Description: {description_name}")
-    else:
-        print("No notes found.")
+    for note in notes:
+        description_name = note.description.name if note.description else "No Description"
+        click.echo(f"ID: {note.id}, Title: {note.title}, Content: {note.content} | Description: {description_name}")
     session.close()
 
-# Delete a note
-def delete_note():
+# Command to list all descriptions
+@cli.command()
+def list_descriptions():
     session = SessionLocal()
-    note_id = 1  # Change to the ID of the note you want to delete
+    descriptions = session.query(Description).all()
+    for desc in descriptions:
+        click.echo(f"ID: {desc.id}, Name: {desc.name}")
+    session.close()
+
+# Command to delete a note
+@cli.command()
+@click.option('--note-id', prompt='Note ID', type=int)
+def delete_note(note_id):
+    session = SessionLocal()
     note = session.query(Note).filter(Note.id == note_id).first()
 
     if not note:
-        print(f"Note with ID {note_id} not found.")
+        click.echo("Note not found.")
         session.close()
         return
 
     session.delete(note)
     session.commit()
-    print(f"Deleted note with ID: {note_id}")
+    click.echo(f"Deleted note with ID: {note_id}")
     session.close()
 
-
-# Main execution
-if __name__ == "__main__":
-    # Adding a note
-    add_note()
-
-    # Viewing all notes
-    view_notes()
-
-    # Deleting a note
-    delete_note()
-
+if __name__ == '__main__':
+    cli()
