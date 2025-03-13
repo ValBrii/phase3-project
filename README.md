@@ -1,5 +1,6 @@
 # Phase3-project
 This project is about a simple notes app which helps the user keep track of things that they want to note down. It can be something that they want to do or even something like a shopping list.
+
 ## Features
 - The user can add a new note
 - View existing notes
@@ -20,6 +21,7 @@ git clone git@github.com:ValBrii/phase3-project.git
 cd phase3-project
 ```
 4. **Run code . to view the files**
+
 
 ## Contributions
 All contributions are welcome.

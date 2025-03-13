@@ -1,71 +1,96 @@
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String, ForeignKey, create_engine
+from sqlalchemy.orm import relationship, sessionmaker
 import click
-from models import Note, Description, Base  # Import Base from your model.py
+
+Base = declarative_base()
+
+# Define the Category model
+class Category(Base):
+    __tablename__ = 'category'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False, unique=True)
+
+    # Relationship with Note
+    notes = relationship("Note", back_populates="category")
+
+# Define the Note model
+class Note(Base):
+    __tablename__ = 'note'
+
+    id = Column(Integer, primary_key=True)
+    title = Column(String, nullable=False)
+    category_id = Column(Integer, ForeignKey('category.id'))
+
+    # Relationship to Category
+    category = relationship("Category", back_populates="notes")
 
 # Database setup
-
 engine = create_engine("sqlite:///notes.db")
 SessionLocal = sessionmaker(bind=engine)
 
 # Create the tables in the database
-Base.metadata.create_all(engine)  # This will create the tables in the database if they don't exist
+Base.metadata.create_all(engine)
 
 @click.group()
 def cli():
-    """
-    CLI for the Notes App
-    """
+    """CLI for the Notes App"""
     pass
 
-# Command to add a new note
+# Command to add a new category
+@cli.command()
+@click.option('--name', prompt='Category Name')
+def add_category(name):
+    session = SessionLocal()
+    category = Category(name=name)
+    session.add(category)
+    session.commit()
+    click.echo(f"Added category: {category.name}")
+    session.close()
+
+# Command to add a new note with a category
 @cli.command()
 @click.option('--title', prompt='Note Title')
-@click.option('--content', prompt='Note Content')
-@click.option('--description-id', prompt='Description ID', type=int)
-def add_note(title, content, description_id):
+@click.option('--category_id', prompt='Category ID', type=int)
+def add_note(title, category):
     session = SessionLocal()
-    description = session.query(Description).filter(Description.id == description_id).first()
+    category_obj = session.query(Category).filter(Category.id == category_id).first()
 
-    if not description:
-        click.echo("Description not found. Please create one first.")
-        session.close()
+    if not category_obj:
+        click.echo("Category not found. Please enter a valid category ID.")
         return
 
-    note = Note(title=title, content=content, description=description)
+    note = Note(title=title, category=category_obj)
     session.add(note)
     session.commit()
-    click.echo(f"Added note: {note.title}")
+    click.echo(f"Added note: {note.title} under category: {category_obj.name}")
     session.close()
 
-# Command to add a new description
-@cli.command()
-@click.option('--name', prompt='Description Name')
-def add_description(name):
-    session = SessionLocal()
-    description = Description(name=name)
-    session.add(description)
-    session.commit()
-    click.echo(f"Added description: {description.name}")
-    session.close()
-
-# Command to list all notes
+# Command to list all notes with their categories
 @cli.command()
 def list_notes():
     session = SessionLocal()
     notes = session.query(Note).all()
+    
     for note in notes:
-        description_name = note.description.name if note.description else "No Description"
-        click.echo(f"ID: {note.id}, Title: {note.title}, Content: {note.content} | Description: {description_name}")
+        category_name = note.category.name if note.category else "Uncategorized"
+        click.echo(f"ID: {note.id}, Title: {note.title}, Category: {category_name}")
+
     session.close()
 
-# Command to list all descriptions
+# Command to list all categories
 @cli.command()
-def list_descriptions():
+def list_categories():
     session = SessionLocal()
-    descriptions = session.query(Description).all()
-    for desc in descriptions:
-        click.echo(f"ID: {desc.id}, Name: {desc.name}")
+    categories = session.query(Category).all()
+    
+    if not categories:
+        click.echo("No categories found.")
+    else:
+        for category in categories:
+            click.echo(f"ID: {category.id}, Name: {category.name}")
+
     session.close()
 
 # Command to delete a note
@@ -74,15 +99,14 @@ def list_descriptions():
 def delete_note(note_id):
     session = SessionLocal()
     note = session.query(Note).filter(Note.id == note_id).first()
+    
+    if note:
+        session.delete(note)
+        session.commit()
+        click.echo(f"Deleted note with ID: {note_id}")
+    else:
+        click.echo("Note not found!")
 
-    if not note:
-        click.echo("Note not found.")
-        session.close()
-        return
-
-    session.delete(note)
-    session.commit()
-    click.echo(f"Deleted note with ID: {note_id}")
     session.close()
 
 if __name__ == '__main__':
