@@ -23,6 +23,32 @@ cd phase3-project
 4. **Run code . to view the files**
 
 
+### Running the Application
+
+1. To add a new category, run:
+    ```bash
+    python main.py add-category --name "<category_name>"
+    ```
+2. To view all categories, run:
+    ```bash
+    python main.py list-categories
+    ```
+3. To add a new note under a category, run:
+    ```bash
+    python main.py add-note --title "<note_title>" --content "<note_content>" --category_id <category_id>
+    ```
+4. To view all notes, run:
+    ```bash
+    python main.py list-notes
+    ```
+5. To delete a note, run:
+    ```bash
+    python main.py delete-note --note-id <note_id>
+    ```
+
+
+
+
 ## Contributions
 All contributions are welcome.
 To contribute to this project, follow the following steps

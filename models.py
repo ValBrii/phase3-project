@@ -10,7 +10,7 @@ class Category(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False, unique=True)
 
-    # Establish one-to-many relationship with Note
+    
     notes = relationship("Note", back_populates="category")
 
 class Note(Base):
@@ -21,7 +21,7 @@ class Note(Base):
     content = Column(String, nullable=False)
     category_id = Column(Integer, ForeignKey('category.id'))
 
-    # Relationship to Description
+    
     category = relationship("Category", back_populates="notes")
 
     

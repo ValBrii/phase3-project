@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker
 import click
 from models import Category, Note, Base
 
-# Database setup
+
 engine = create_engine("sqlite:///notes.db")
 SessionLocal = sessionmaker(bind=engine)
 
